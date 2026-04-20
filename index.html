@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Planner — AI Agency Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --text: #f0ece4;
+    --text-muted: #666;
+    --text-dim: #444;
+    --accent: #c8ff57;
+    --accent-dark: #9acc35;
+    --purple: #a78bfa;
+    --teal: #34d399;
+    --coral: #fb7185;
+    --amber: #fbbf24;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 60% 40% at 10% 0%, rgba(200,255,87,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 90% 100%, rgba(167,139,250,0.04) 0%, transparent 70%);
+  }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Header */
+  .header { margin-bottom: 48px; }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .header-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--accent); }
+  .header h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+  .header h1 span { color: var(--accent); }
+  .header-sub { font-size: 14px; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
+
+  /* Week indicator */
+  .week-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; margin-bottom: 32px;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted);
+  }
+  .week-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* Input area */
+  .input-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 28px; margin-bottom: 16px;
+    transition: border-color .2s;
+  }
+  .input-card:focus-within { border-color: var(--border-hover); }
+  .input-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px; display: block;
+  }
+  .input-field {
+    width: 100%; background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    font-family: 'Syne', sans-serif; font-size: 14px; color: var(--text);
+    resize: none; min-height: 96px; line-height: 1.6;
+    transition: border-color .2s;
+    outline: none;
+  }
+  .input-field::placeholder { color: var(--text-dim); }
+  .input-field:focus { border-color: rgba(200,255,87,0.3); }
+
+  /* Chips */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .chip {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px;
+    border: 0.5px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all .15s;
+    font-family: 'Syne', sans-serif;
+  }
+  .chip:hover { border-color: var(--border-hover); color: var(--text); }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(200,255,87,0.06); }
+
+  /* Generate button */
+  .gen-btn {
+    width: 100%; padding: 16px; border-radius: var(--radius);
+    background: var(--accent); color: #0a0a0a;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    border: none; cursor: pointer; letter-spacing: .01em;
+    transition: all .15s; margin-top: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .gen-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    display: none; align-items: center; justify-content: center; gap: 12px;
+    padding: 40px; color: var(--text-muted);
+    font-family: 'DM Mono', monospace; font-size: 13px;
+  }
+  .loading.show { display: flex; }
+  .spinner {
+    width: 18px; height: 18px; border: 1.5px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result area */
+  .result { display: none; margin-top: 40px; }
+  .result.show { display: block; }
+
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .result-title {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .result-week { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
+
+  /* Day cards */
+  .day-card {
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 10px; background: var(--bg2);
+    transition: border-color .2s, transform .15s;
+    opacity: 0; transform: translateY(8px);
+    animation: fadeUp .35s ease forwards;
+  }
+  .day-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  .day-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .day-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .day-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .day-tag {
+    font-size: 10px; padding: 3px 9px; border-radius: 10px;
+    font-weight: 600; letter-spacing: .04em;
+  }
+  .tag-journey { background: rgba(52,211,153,0.1); color: var(--teal); }
+  .tag-tools { background: rgba(167,139,250,0.1); color: var(--purple); }
+  .tag-mindset { background: rgba(251,191,36,0.1); color: var(--amber); }
+  .tag-business { background: rgba(251,113,133,0.1); color: var(--coral); }
+  .day-format { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); }
+
+  .day-hook { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+  .day-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* YT section */
+  .yt-section { margin-top: 28px; }
+  .yt-header {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 14px;
+  }
+  .yt-header::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+  .yt-card {
+    border: 0.5px solid rgba(251,191,36,0.2); border-radius: var(--radius);
+    padding: 20px 22px; background: rgba(251,191,36,0.03);
+    opacity: 0; animation: fadeUp .35s ease .6s forwards;
+  }
+  .yt-card .day-hook { color: var(--amber); }
+
+  /* Error */
+  .error-box {
+    display: none; padding: 16px 20px;
+    background: rgba(251,113,133,0.05); border: 0.5px solid rgba(251,113,133,0.2);
+    border-radius: var(--radius-sm); color: var(--coral);
+    font-size: 13px; margin-top: 16px; line-height: 1.6;
+  }
+  .error-box.show { display: block; }
+
+  /* Footer note */
+  .footer-note {
+    margin-top: 48px; padding-top: 24px; border-top: 0.5px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .footer-note::before { content: '//'; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">AI Agency Journey</div>
+    <h1>Dein <span>Wochenplan</span><br>auf Knopfdruck.</h1>
+    <p class="header-sub">2 Sätze über deine Woche — und du bekommst 7 fertige TikTok/Reel-Ideen mit Hooks + YouTube-Konzept. Personalisiert auf deinen aktuellen Stand.</p>
+  </div>
+
+  <div class="week-badge">
+    <span class="dot"></span>
+    <span id="week-display">Wird geladen...</span>
+  </div>
+
+  <div class="input-card">
+    <label class="input-label" for="weekly-input">Was hast du diese Woche gelernt oder gemacht?</label>
+    <textarea
+      class="input-field"
+      id="weekly-input"
+      placeholder="z.B. Ich habe Make.com ausprobiert und meine erste Automation gebaut. War frustierend am Anfang aber hat am Ende funktioniert..."
+    ></textarea>
+
+    <div style="margin-top: 20px;">
+      <span class="chip-label">Schwerpunkt diese Woche</span>
+      <div class="chips-row" id="chips">
+        <button class="chip active" data-value="AI Tools & Automationen">AI Tools</button>
+        <button class="chip" data-value="Mindset & Disziplin">Mindset</button>
+        <button class="chip" data-value="Business-Aufbau & Clients">Business</button>
+        <button class="chip" data-value="Persönliche Journey & Realness">Journey</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="gen-btn" onclick="generate()">
+    <span id="btn-text">Wochenplan generieren</span>
+  </button>
+
+  <div class="error-box" id="error-box"></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span id="loading-text">Plan wird generiert...</span>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-header">
+      <span class="result-title">Dein Wochenplan</span>
+      <span class="result-week" id="result-week"></span>
+    </div>
+    <div id="days-container"></div>
+    <div class="yt-section">
+      <div class="yt-header">YouTube</div>
+      <div id="yt-container"></div>
+    </div>
+  </div>
+
+  <p class="footer-note">Jeden Montag neu generieren — bleibt immer aktuell zu deiner Journey.</p>
+</div>
+
+<script>
+// Week display
+function getWeekNumber(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+const now = new Date();
+const kw = getWeekNumber(now);
+document.getElementById('week-display').textContent = `KW ${kw} · ${now.getFullYear()}`;
+document.getElementById('result-week').textContent = `KW ${kw}`;
+
+// Chips
+document.getElementById('chips').addEventListener('click', e => {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+});
+
+const tagClass = { 'Journey': 'tag-journey', 'AI Tools': 'tag-tools', 'Mindset': 'tag-mindset', 'Business': 'tag-business' };
+
+function tagHTML(label) {
+  const cls = tagClass[label] || 'tag-journey';
+  return `<span class="day-tag ${cls}">${label}</span>`;
+}
+
+function renderDays(days) {
+  const container = document.getElementById('days-container');
+  container.innerHTML = '';
+  days.forEach((day, i) => {
+    const delay = i * 0.07;
+    const tag = tagHTML(day.tag || 'Journey');
+    container.innerHTML += `
+      <div class="day-card" style="animation-delay:${delay}s">
+        <div class="day-top">
+          <div class="day-meta">
+            <span class="day-name">${day.day.toUpperCase()}</span>
+            ${tag}
+          </div>
+          <span class="day-format">${day.format}</span>
+        </div>
+        <p class="day-hook">"${day.hook}"</p>
+        <p class="day-desc">${day.desc}</p>
+      </div>`;
+  });
+}
+
+function renderYT(videos) {
+  const container = document.getElementById('yt-container');
+  container.innerHTML = '';
+  videos.forEach((v, i) => {
+    const delay = 0.5 + i * 0.1;
+    container.innerHTML += `
+      <div class="yt-card" style="animation-delay:${delay}s; margin-bottom: ${i < videos.length-1 ? '10px' : '0'}">
+        <div class="day-top">
+          <div class="day-meta">
+            <span class="day-name">${v.type?.toUpperCase() || 'HAUPTVIDEO'}</span>
+            <span class="day-tag tag-mindset">${v.duration || '8–10 Min'}</span>
+          </div>
+        </div>
+        <p class="day-hook">"${v.title}"</p>
+        <p class="day-desc">${v.desc}</p>
+      </div>`;
+  });
+}
+
+const loadingTexts = [
+  'Hooks werden geschärft...',
+  'Journey wird analysiert...',
+  'Wochenplan wird gebaut...',
+  'Fast fertig...'
+];
+let loadingInterval;
+
+async function generate() {
+  const input = document.getElementById('weekly-input').value.trim();
+  const focus = document.querySelector('.chip.active')?.dataset.value || 'AI Tools';
+  const btn = document.getElementById('gen-btn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  const errorBox = document.getElementById('error-box');
+
+  errorBox.classList.remove('show');
+  result.classList.remove('show');
+  btn.disabled = true;
+  loading.classList.add('show');
+
+  let li = 0;
+  document.getElementById('loading-text').textContent = loadingTexts[0];
+  loadingInterval = setInterval(() => {
+    li = (li + 1) % loadingTexts.length;
+    document.getElementById('loading-text').textContent = loadingTexts[li];
+  }, 1800);
+
+  const prompt = `Du bist ein Social Media Stratege für einen 20-jährigen Creator der eine AI Agency aufbaut.
+
+Diese Woche: "${input || 'Keine spezifische Eingabe — generiere einen allgemeinen Plan für Woche ' + kw}"
+Schwerpunkt: ${focus}
+Aktuelle KW: ${kw}
+
+Erstelle einen Wochenplan. Antworte NUR mit einem JSON-Objekt, kein Markdown, keine Erklärung:
+
+{
+  "days": [
+    {
+      "day": "Montag",
+      "format": "Talking Head",
+      "hook": "Hook-Satz des Videos",
+      "desc": "Kurze Beschreibung was im Video passiert",
+      "tag": "Journey"
+    }
+  ],
+  "youtube": [
+    {
+      "type": "Hauptvideo",
+      "title": "YouTube Video Titel",
+      "desc": "Kurze Beschreibung",
+      "duration": "8–10 Min"
+    }
+  ]
+}
+
+Regeln:
+- 7 Tage (Montag bis Sonntag)
+- Formate abwechseln: Talking Head, Screen Recording, POV, Mindset
+- Tags nur aus: Journey, AI Tools, Mindset, Business
+- Hooks müssen stark, ehrlich und spezifisch sein — kein Fake-Guru Ton
+- Hooks auf die Eingabe des Users beziehen wenn vorhanden
+- 1–2 YouTube Videos
+- Alles auf Deutsch`;
+
+  try {
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': 'YOUR_API_KEY_HERE', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    clearInterval(loadingInterval);
+    loading.classList.remove('show');
+
+    if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
+
+    const data = await response.json();
+    const text = data.content?.map(b => b.text || '').join('') || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    renderDays(parsed.days || []);
+    renderYT(parsed.youtube || []);
+    result.classList.add('show');
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    clearInterval(loadingInterval);
+    loading.classList.remove('show');
+    errorBox.textContent = `Fehler beim Generieren: ${err.message}. Bitte versuche es nochmal.`;
+    errorBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Enter key shortcut
+document.getElementById('weekly-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.metaKey) generate();
+});
+</script>
+</body>
+</html>
